@@ -11,7 +11,7 @@ const client = new Client({
 const commands = [
     new SlashCommandBuilder()
         .setName('find')
-        .setDescription('Find empty Roblox groups with 0 members!')
+        .setDescription('Find open empty Roblox groups with 0 members!')
         .toJSON()
 ];
 
@@ -27,24 +27,30 @@ async function registerCommands() {
 
 async function findEmptyGroups() {
     const emptyGroups = [];
-    for (let i = 0; i < 20; i++) {
+    
+    for (let i = 0; i < 50; i++) {
         const randomId = Math.floor(Math.random() * 10000000) + 1;
         try {
             const response = await axios.get(
                 `https://groups.roblox.com/v1/groups/${randomId}`
             );
             const group = response.data;
-            if (group.memberCount === 0) {
+            
+            if (group.memberCount === 0 && !group.isLocked && group.publicEntryAllowed) {
                 emptyGroups.push({
                     name: group.name,
                     id: group.id,
                     link: `https://www.roblox.com/groups/${group.id}`
                 });
             }
+            
             if (emptyGroups.length >= 5) break;
+            
         } catch (err) {}
-        await new Promise(r => setTimeout(r, 500));
+        
+        await new Promise(r => setTimeout(r, 300));
     }
+    
     return emptyGroups;
 }
 
@@ -54,10 +60,10 @@ client.on('interactionCreate', async interaction => {
         await interaction.deferReply();
         const groups = await findEmptyGroups();
         if (groups.length === 0) {
-            await interaction.editReply('❌ No empty groups found! Try again!');
+            await interaction.editReply('❌ No open empty groups found! Try again!');
             return;
         }
-        let message = '🔍 **Empty Roblox Groups Found!**\n\n';
+        let message = '🔍 **Open Empty Roblox Groups Found!**\n\n';
         groups.forEach((group, index) => {
             message += `**${index + 1}. ${group.name}**\n`;
             message += `🔗 ${group.link}\n\n`;
